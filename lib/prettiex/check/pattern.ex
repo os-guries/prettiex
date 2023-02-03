@@ -1,3 +1,3 @@
 defmodule Prettiex.Check.Pattern do
-  defstruct [:form]
+  defstruct [:form, :skip?]
 end

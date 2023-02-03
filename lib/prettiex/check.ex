@@ -12,9 +12,10 @@ defmodule Prettiex.Check do
   @pattern %Spark.Dsl.Entity{
     name: :pattern,
     target: Pattern,
-    args: [:form],
+    args: [],
     schema: [
-      form: [type: :quoted, required: true]
+      form: [type: :quoted, required: true],
+      skip?: [type: :boolean, default: false]
     ]
   }
 
@@ -52,14 +53,7 @@ defmodule Prettiex.Check do
       # TODO(drgmr): add an example
     ],
     target: All,
-    args: [],
-    schema: [
-      pattern: [
-        type: :string,
-        required: true,
-        doc: "Patterns to be matched on, in sequence"
-      ]
-    ]
+    entities: [patterns: @pattern]
   }
 
   @reduce %Spark.Dsl.Entity{

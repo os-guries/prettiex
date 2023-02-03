@@ -1,3 +1,3 @@
 defmodule Prettiex.Check.All do
-  defstruct []
+  defstruct [:patterns]
 end
