@@ -1,0 +1,6 @@
+%{
+  "elixir_sense": {:git, "https://github.com/elixir-lsp/elixir_sense.git", "6d1a951bfbfc02e93b410acded82c736e1806df2", []},
+  "nimble_options": {:hex, :nimble_options, "0.5.2", "42703307b924880f8c08d97719da7472673391905f528259915782bb346e0a1b", [:mix], [], "hexpm", "4da7f904b915fd71db549bcdc25f8d56f378ef7ae07dc1d372cbe72ba950dce0"},
+  "sourceror": {:hex, :sourceror, "0.11.2", "549ce48be666421ac60cfb7f59c8752e0d393baa0b14d06271d3f6a8c1b027ab", [:mix], [], "hexpm", "9ab659118896a36be6eec68ff7b0674cba372fc8e210b1e9dc8cf2b55bb70dfb"},
+  "spark": {:hex, :spark, "0.3.9", "8d4eb0eeceaf054e631bf8067b35a274d12a9b43b76f9d4cc91249edc12127dd", [:mix], [{:nimble_options, "~> 0.5", [hex: :nimble_options, repo: "hexpm", optional: false]}, {:sourceror, "~> 0.1", [hex: :sourceror, repo: "hexpm", optional: false]}], "hexpm", "f0f193c0016bb1394d4c60699a7d9f7d53246bf65243480b382333de4b347d28"},
+}

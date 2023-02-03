@@ -1,18 +1,6 @@
 defmodule Prettiex do
-  @moduledoc """
-  Documentation for `Prettiex`.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Prettiex.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  use Spark.Dsl,
+    default_extensions: [
+      extensions: [Prettiex.Check]
+    ]
 end
