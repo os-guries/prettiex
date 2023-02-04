@@ -3,6 +3,8 @@ defmodule Prettiex.Runner do
   alias Prettiex.Check.Definition
   alias Prettiex.Check.Meta
   alias Prettiex.Issue
+  alias Prettiex.Check.Sequence
+  alias Sourceror.Zipper, as: Z
 
   def run(module, ast) do
     check = module.spark_dsl_config[[:check]]
@@ -14,12 +16,22 @@ defmodule Prettiex.Runner do
     []
   end
 
-  defp interpret(check, %Definition{all: all}, ast) do
-    Enum.flat_map(all, &interpret(check, &1, ast))
+  defp interpret(check, %Definition{all: all, sequence: sequence}, ast) do
+    Enum.flat_map(sequence ++ all, &interpret(check, &1, ast))
   end
 
   defp interpret(check, %All{patterns: patterns}, ast) do
-    match? = patterns |> find_matches(ast) |> Enum.all?(&(&1 == :match))
+    match? = patterns |> find_single_matches(ast) |> Enum.all?(&(&1 == :match))
+
+    if match? do
+      [emit_issue!(check)]
+    else
+      []
+    end
+  end
+
+  defp interpret(check, %Sequence{patterns: patterns}, ast) do
+    match? = patterns |> find_sibling_matches(ast) |> Enum.any?(&(&1 == :match))
 
     if match? do
       [emit_issue!(check)]
@@ -32,7 +44,10 @@ defmodule Prettiex.Runner do
     []
   end
 
-  defp find_matches(
+  defp check_matches_with(matches, checker) do
+  end
+
+  defp find_single_matches(
          [pattern | patterns],
          ast,
          initial_matches \\ []
@@ -42,14 +57,42 @@ defmodule Prettiex.Runner do
         if ast_match?(pattern.form, node) do
           {node, [if(pattern.skip?, do: :skip_match, else: :match) | matches]}
         else
-          {node, matches}
+          {node, [:skip | matches]}
         end
       end)
 
     case patterns do
       [] -> matches
-      remaining -> find_matches(remaining, ast, matches)
+      remaining -> find_single_matches(remaining, ast, matches)
     end
+  end
+
+  defp find_sibling_matches(patterns, ast, initial_matches \\ [])
+
+  defp find_sibling_matches(
+         [p1, p2 | patterns],
+         ast,
+         initial_matches
+       ) do
+    {_new_ast, matches} =
+      ast
+      |> Z.zip()
+      |> Z.traverse([], fn zipper, matches ->
+        sibling = Z.right(zipper)
+
+        if ast_match?(p1.form, Z.node(zipper)) and not is_nil(sibling) and
+             ast_match?(p2.form, Z.node(sibling)) do
+          {zipper, [:match | matches]}
+        else
+          {zipper, matches}
+        end
+      end)
+
+    matches
+  end
+
+  defp find_sibling_matches([_] = patterns, ast, initial_matches) do
+    initial_matches
   end
 
   defp ast_match?({a, _, a_children}, {b, _, b_children}) do
