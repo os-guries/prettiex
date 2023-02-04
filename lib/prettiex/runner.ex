@@ -19,7 +19,7 @@ defmodule Prettiex.Runner do
   end
 
   defp interpret(check, %All{patterns: patterns}, ast) do
-    match? = patterns |> patterns_match?(ast) |> Enum.all?(&(&1 == :match))
+    match? = patterns |> find_matches(ast) |> Enum.all?(&(&1 == :match))
 
     if match? do
       [emit_issue!(check)]
@@ -32,7 +32,7 @@ defmodule Prettiex.Runner do
     []
   end
 
-  defp patterns_match?(
+  defp find_matches(
          [pattern | patterns],
          ast,
          initial_matches \\ []
@@ -48,7 +48,7 @@ defmodule Prettiex.Runner do
 
     case patterns do
       [] -> matches
-      remaining -> patterns_match?(remaining, ast, matches)
+      remaining -> find_matches(remaining, ast, matches)
     end
   end
 
