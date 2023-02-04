@@ -22,6 +22,7 @@ defmodule Prettiex.MixProject do
   defp deps do
     [
       {:spark, "~> 0.3.9"},
+      {:sourceror, "~> 0.11"},
       {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test]}
     ]
   end

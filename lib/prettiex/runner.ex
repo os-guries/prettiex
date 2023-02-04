@@ -4,6 +4,7 @@ defmodule Prettiex.Runner do
   alias Prettiex.Check.Meta
   alias Prettiex.Issue
   alias Prettiex.Check.Sequence
+  alias Prettiex.AST
   alias Sourceror.Zipper, as: Z
 
   def run(module, ast) do
@@ -21,9 +22,9 @@ defmodule Prettiex.Runner do
   end
 
   defp interpret(check, %All{patterns: patterns}, ast) do
-    match? = patterns |> find_single_matches(ast) |> Enum.all?(&(&1 == :match))
+    matches? = patterns |> find_single_matches(ast) |> Enum.all?(&(&1 == :match))
 
-    if match? do
+    if matches? do
       [emit_issue!(check)]
     else
       []
@@ -31,9 +32,9 @@ defmodule Prettiex.Runner do
   end
 
   defp interpret(check, %Sequence{patterns: patterns}, ast) do
-    match? = patterns |> find_sibling_matches(ast) |> Enum.any?(&(&1 == :match))
+    matches? = patterns |> find_sibling_matches(ast) |> Enum.any?(&(&1 == :match))
 
-    if match? do
+    if matches? do
       [emit_issue!(check)]
     else
       []
@@ -44,9 +45,6 @@ defmodule Prettiex.Runner do
     []
   end
 
-  defp check_matches_with(matches, checker) do
-  end
-
   defp find_single_matches(
          [pattern | patterns],
          ast,
@@ -54,10 +52,10 @@ defmodule Prettiex.Runner do
        ) do
     {_new_ast, matches} =
       Macro.prewalk(ast, initial_matches, fn node, matches ->
-        if ast_match?(pattern.form, node) do
+        if AST.matches?(pattern.form, node) do
           {node, [if(pattern.skip?, do: :skip_match, else: :match) | matches]}
         else
-          {node, [:skip | matches]}
+          {node, matches}
         end
       end)
 
@@ -77,39 +75,22 @@ defmodule Prettiex.Runner do
     {_new_ast, matches} =
       ast
       |> Z.zip()
-      |> Z.traverse([], fn zipper, matches ->
+      |> Z.traverse(initial_matches, fn zipper, matches ->
         sibling = Z.right(zipper)
 
-        if ast_match?(p1.form, Z.node(zipper)) and not is_nil(sibling) and
-             ast_match?(p2.form, Z.node(sibling)) do
+        if AST.matches?(p1.form, Z.node(zipper)) and not is_nil(sibling) and
+             AST.matches?(p2.form, Z.node(sibling)) do
           {zipper, [:match | matches]}
         else
           {zipper, matches}
         end
       end)
 
-    matches
+    find_sibling_matches(patterns, ast, matches)
   end
 
-  defp find_sibling_matches([_] = patterns, ast, initial_matches) do
+  defp find_sibling_matches([_] = _patterns, _ast, initial_matches) do
     initial_matches
-  end
-
-  defp ast_match?({a, _, a_children}, {b, _, b_children}) do
-    cond do
-      a == b and is_nil(a_children) -> true
-      a == b and children_matches?(a_children, b_children) -> true
-      true -> false
-    end
-  end
-
-  defp ast_match?(_, _) do
-    false
-  end
-
-  defp children_matches?(a, b) do
-    Enum.zip(a, b)
-    |> Enum.all?(fn {aa, bb} -> ast_match?(aa, bb) end)
   end
 
   defp emit_issue!(%{entities: [%Meta{} = meta | _]}) do
