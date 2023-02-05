@@ -14,9 +14,9 @@ defmodule Prettiex.AST do
   end
 
   def match_sequence([p1, p2 | ps], ast) do
-    with {:node, node} when not is_nil(node) <- {:node, find(p1, ast)},
-         {:right, right} when not is_nil(right) <- {:right, node |> Z.right() |> maybe_node()} do
-      if matches_form?(p2.form, right) do
+    with node when not is_nil(node) <- find(p1, ast),
+         right when not is_nil(right) <- node |> Z.right() |> maybe_node() do
+      if matches_form?(p2.form, right) or p2.skip? do
         true and match_sequence(ps, ast)
       else
         false
@@ -54,8 +54,24 @@ defmodule Prettiex.AST do
     if is_nil(input), do: nil, else: Z.node(input)
   end
 
-  def matches_form?({form_atom, _, form_args}, {node_atom, _meta, node_args}) do
-    form_atom == node_atom and (is_nil(form_args) or form_args == node_args)
+  def matches_form?({form_atom, _, form_args} = form, {node_atom, _, _} = node) do
+    cond do
+      form_atom != node_atom ->
+        false
+
+      is_nil(form_args) ->
+        true
+
+      true ->
+        next_form = form |> Z.zip() |> Z.next()
+        next_node = node |> Z.zip() |> Z.next() |> maybe_node()
+
+        cond do
+          Z.end?(next_form) -> true
+          is_nil(next_node) -> false
+          true -> matches_form?(maybe_node(next_form), next_node)
+        end
+    end
   end
 
   def matches_form?(a, b) do

@@ -123,6 +123,49 @@ defmodule Prettiex.ASTTest do
       refute AST.match_sequence(patterns, ast)
     end
 
+    test "skips maintain the sequence" do
+      patterns = [
+        %Pattern{form: {:def, [], nil}},
+        %Pattern{skip?: true, form: {:@, [], [{:spec, [], nil}]}},
+        %Pattern{form: {:defp, [], nil}}
+      ]
+
+      ast =
+        quote do
+          defmodule Test do
+            def public do
+            end
+
+            @spec private() :: nil
+            defp private do
+            end
+          end
+        end
+
+      assert AST.match_sequence(patterns, ast)
+    end
+
+    test "skips are optional to appear in sequence" do
+      patterns = [
+        %Pattern{form: {:def, [], nil}},
+        %Pattern{skip?: true, form: {:@, [], [{:spec, [], nil}]}},
+        %Pattern{form: {:defp, [], nil}}
+      ]
+
+      ast =
+        quote do
+          defmodule Test do
+            def public do
+            end
+
+            defp private do
+            end
+          end
+        end
+
+      assert AST.match_sequence(patterns, ast)
+    end
+
     test "matches single patterns" do
       patterns = [
         %Pattern{form: {:def, [], nil}}
