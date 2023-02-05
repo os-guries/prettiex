@@ -29,9 +29,7 @@ defmodule Prettiex.Runner do
   end
 
   defp interpret(check, %Sequence{patterns: patterns}, ast) do
-    matches? = patterns |> AST.find_sibling_matches(ast) |> Enum.any?(&(&1 == :match))
-
-    if matches? do
+    if AST.match_sequence(patterns, ast) do
       [emit_issue!(check)]
     else
       []

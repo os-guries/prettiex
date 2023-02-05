@@ -82,7 +82,7 @@ defmodule Prettiex.ASTTest do
   end
 
   describe "find_sibling_matches" do
-    test "works" do
+    test "matches sequence patterns" do
       patterns = [
         %Pattern{form: {:def, [], nil}},
         %Pattern{form: {:defp, [], nil}}
@@ -99,7 +99,48 @@ defmodule Prettiex.ASTTest do
           end
         end
 
-      assert [:match, :match] = AST.find_sibling_matches(patterns, ast)
+      assert AST.match_sequence(patterns, ast)
+    end
+
+    test "does not match non-adjacent patterns" do
+      patterns = [
+        %Pattern{form: {:def, [], nil}},
+        %Pattern{form: {:defp, [], nil}}
+      ]
+
+      ast =
+        quote do
+          defmodule Test do
+            def public do
+            end
+
+            @spec private() :: nil
+            defp private do
+            end
+          end
+        end
+
+      refute AST.match_sequence(patterns, ast)
+    end
+
+    test "matches single patterns" do
+      patterns = [
+        %Pattern{form: {:def, [], nil}}
+      ]
+
+      ast =
+        quote do
+          defmodule Test do
+            def public do
+            end
+
+            @spec private() :: nil
+            defp private do
+            end
+          end
+        end
+
+      assert AST.match_sequence(patterns, ast)
     end
   end
 
@@ -164,7 +205,7 @@ defmodule Prettiex.ASTTest do
           end
         end
 
-      assert [:skip] == AST.find_matches([pattern], ast)
+      assert [] == AST.find_matches([pattern], ast)
     end
 
     test "matches multiple patterns ss" do
