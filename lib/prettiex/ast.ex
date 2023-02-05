@@ -10,9 +10,16 @@ defmodule Prettiex.AST do
   def match_all(patterns, ast) do
     patterns
     |> find_matches(ast)
-    |> Enum.all?(&(&1 == :match))
+    |> Enum.all?(&is_match/1)
   end
 
+  def match_alternative(patterns, ast) do
+    patterns
+    |> find_matches(ast)
+    |> Enum.any?(&is_match/1)
+  end
+
+  # {:match, node} | :undefined
   def match_sequence([p1, p2 | ps], ast) do
     with node when not is_nil(node) <- find(p1, ast),
          right when not is_nil(right) <- node |> Z.right() |> maybe_node() do
@@ -37,8 +44,8 @@ defmodule Prettiex.AST do
     on_match = fn match, pattern ->
       cond do
         is_nil(match) -> :skip
-        pattern.skip? -> :skip_match
-        true -> :match
+        pattern.skip? -> {:skip_match, match}
+        true -> {:match, match}
       end
     end
 
@@ -48,10 +55,6 @@ defmodule Prettiex.AST do
       |> on_match.(pattern)
     end)
     |> Enum.filter(&(&1 != :skip))
-  end
-
-  defp maybe_node(input) do
-    if is_nil(input), do: nil, else: Z.node(input)
   end
 
   def matches_form?({form_atom, _, form_args} = form, {node_atom, _, _} = node) do
@@ -77,4 +80,11 @@ defmodule Prettiex.AST do
   def matches_form?(a, b) do
     a == b
   end
+
+  defp maybe_node(input) do
+    if is_nil(input), do: nil, else: Z.node(input)
+  end
+
+  defp is_match({:match, _}), do: true
+  defp is_match(_), do: false
 end

@@ -76,7 +76,7 @@ defmodule Prettiex.ASTTest do
           end
         end
 
-      assert [:skip_match, :match] = AST.find_matches(patterns, ast)
+      assert [{:skip_match, _}, {:match, _}] = AST.find_matches(patterns, ast)
       refute AST.match_all(patterns, ast)
     end
   end
@@ -206,7 +206,7 @@ defmodule Prettiex.ASTTest do
           end
         end
 
-      assert [:match] == AST.find_matches([pattern], ast)
+      assert [{:match, _}] = AST.find_matches([pattern], ast)
     end
 
     test "skips matching pattern" do
@@ -227,7 +227,7 @@ defmodule Prettiex.ASTTest do
           end
         end
 
-      assert [:skip_match] == AST.find_matches([pattern], ast)
+      assert [{:skip_match, _}] = AST.find_matches([pattern], ast)
     end
 
     test "skips unmatching" do
@@ -271,7 +271,7 @@ defmodule Prettiex.ASTTest do
           end
         end
 
-      assert [:match] == AST.find_matches(patterns, ast)
+      assert [{:match, _}] = AST.find_matches(patterns, ast)
     end
 
     test "matches multiple patterns" do
@@ -301,7 +301,7 @@ defmodule Prettiex.ASTTest do
           end
         end
 
-      assert [:match, :match] == AST.find_matches(patterns, ast)
+      assert [{:match, _}, {:match, _}] = AST.find_matches(patterns, ast)
     end
   end
 end

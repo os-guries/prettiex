@@ -1,10 +1,10 @@
 defmodule Prettiex.Runner do
+  alias Prettiex.AST
   alias Prettiex.Check.All
   alias Prettiex.Check.Definition
   alias Prettiex.Check.Meta
-  alias Prettiex.Issue
   alias Prettiex.Check.Sequence
-  alias Prettiex.AST
+  alias Prettiex.Issue
 
   def run(module, ast) do
     check = module.spark_dsl_config[[:check]]
@@ -16,8 +16,8 @@ defmodule Prettiex.Runner do
     []
   end
 
-  defp interpret(check, %Definition{all: all, sequence: sequence}, ast) do
-    Enum.flat_map(sequence ++ all, &interpret(check, &1, ast))
+  defp interpret(check, %Definition{all: all, sequence: sequence, alternative: alternative}, ast) do
+    Enum.flat_map(sequence ++ all ++ alternative, &interpret(check, &1, ast))
   end
 
   defp interpret(check, %All{patterns: patterns}, ast) do
