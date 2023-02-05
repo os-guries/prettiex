@@ -8,26 +8,26 @@ defmodule Prettiex.AST do
   end
 
   def match_all(patterns, ast) do
-    patterns
-    |> find_matches(ast)
-    |> Enum.all?(&is_match/1)
+    matches = find_matches(patterns, ast)
+
+    if Enum.all?(matches, &is_match/1) do
+      Enum.find(matches, &is_match/1)
+    end
   end
 
-  def match_alternative(patterns, ast) do
-    patterns
-    |> find_matches(ast)
-    |> Enum.any?(&is_match/1)
-  end
-
-  # {:match, node} | :undefined
+  # {:match, node} | nil
   def match_sequence([p1, p2 | ps], ast) do
     with node when not is_nil(node) <- find(p1, ast),
          right when not is_nil(right) <- node |> Z.right() |> maybe_node() do
       if matches_form?(p2.form, right) or p2.skip? do
-        true and match_sequence(ps, ast)
+        if match_sequence(ps, ast) do
+          {:match, maybe_node(node)}
+        end
       else
-        false
+        nil
       end
+    else
+      _ -> nil
     end
   end
 
@@ -44,8 +44,8 @@ defmodule Prettiex.AST do
     on_match = fn match, pattern ->
       cond do
         is_nil(match) -> :skip
-        pattern.skip? -> {:skip_match, match}
-        true -> {:match, match}
+        pattern.skip? -> {:skip_match, maybe_node(match)}
+        true -> {:match, maybe_node(match)}
       end
     end
 

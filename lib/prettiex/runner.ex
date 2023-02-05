@@ -12,27 +12,21 @@ defmodule Prettiex.Runner do
     Enum.flat_map(check.entities, &interpret(check, &1, ast))
   end
 
-  defp interpret(_check, %Meta{}, _ast) do
-    []
-  end
-
   defp interpret(check, %Definition{all: all, sequence: sequence, alternative: alternative}, ast) do
     Enum.flat_map(sequence ++ all ++ alternative, &interpret(check, &1, ast))
   end
 
   defp interpret(check, %All{patterns: patterns}, ast) do
-    if AST.match_all(patterns, ast) do
-      [emit_issue!(check)]
-    else
-      []
+    case AST.match_all(patterns, ast) do
+      {:match, node} -> [emit_issue!(check, node)]
+      _ -> []
     end
   end
 
   defp interpret(check, %Sequence{patterns: patterns}, ast) do
-    if AST.match_sequence(patterns, ast) do
-      [emit_issue!(check)]
-    else
-      []
+    case AST.match_sequence(patterns, ast) do
+      {:match, node} -> [emit_issue!(check, node)]
+      _ -> []
     end
   end
 
@@ -40,7 +34,7 @@ defmodule Prettiex.Runner do
     []
   end
 
-  defp emit_issue!(%{entities: [%Meta{} = meta | _]}) do
-    %Issue{name: meta.name, message: meta.message}
+  defp emit_issue!(%{entities: [%Meta{} = meta | _]}, {_, node_meta, _} \\ nil) do
+    %Issue{name: meta.name, message: meta.message, info: node_meta}
   end
 end

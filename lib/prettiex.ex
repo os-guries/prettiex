@@ -5,7 +5,7 @@ defmodule Prettiex do
     ]
 
   defmodule Issue do
-    defstruct [:name, :message]
+    defstruct [:name, :message, :info]
   end
 
   # TODO: Accept `matcher_fun` with arity = 2 and pass an accumulator around
