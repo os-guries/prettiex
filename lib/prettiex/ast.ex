@@ -70,7 +70,7 @@ defmodule Prettiex.AST do
         next_node = node |> Z.zip() |> Z.next() |> maybe_node()
 
         cond do
-          Z.end?(next_form) -> true
+          is_end?(next_form) -> true
           is_nil(next_node) -> false
           true -> matches_form?(maybe_node(next_form), next_node)
         end
@@ -87,4 +87,6 @@ defmodule Prettiex.AST do
 
   defp is_match({:match, _}), do: true
   defp is_match(_), do: false
+
+  defp is_end?({_, meta}), do: meta == :end
 end

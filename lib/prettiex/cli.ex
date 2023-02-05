@@ -2,19 +2,20 @@ defmodule Prettiex.CLI do
   alias Prettiex.Runner
   alias Prettiex.Issue
 
+  @parser_options [switches: [src: :string, config: :string], aliases: [s: :file, c: :file]]
+
   def main(args) do
-    options = [switches: [src: :string, config: :string], aliases: [s: :file, c: :file]]
-    {opts, _, _} = OptionParser.parse(args, options)
+    {opts, _, _} = OptionParser.parse(args, @parser_options)
 
-    config = get_config_path(opts)
-    paths = Path.wildcard(opts[:src])
+    config_path = get_config_path(opts)
+    paths = opts |> get_src_path() |> Path.wildcard()
 
-    try do
-      {%{checks: checks}, _} = Code.eval_file(config)
-      run_checks(checks, paths)
-    rescue
-      _ -> raise "Missing config file"
+    if not File.exists?(config_path) do
+      raise "Missing config file at " <> config_path
     end
+
+    {%{checks: checks}, _} = Code.eval_file(config_path)
+    run_checks(checks, paths)
   end
 
   defp run_checks(checks, paths) do
@@ -38,6 +39,16 @@ defmodule Prettiex.CLI do
       config
     else
       Path.join(File.cwd!(), ".prettiex.exs")
+    end
+  end
+
+  defp get_src_path(options) do
+    lib = options[:lib]
+
+    if is_nil(lib) do
+      Path.join(File.cwd!(), "lib/**/*.ex")
+    else
+      lib
     end
   end
 
