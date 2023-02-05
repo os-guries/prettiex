@@ -21,9 +21,7 @@ defmodule Prettiex.Runner do
   end
 
   defp interpret(check, %All{patterns: patterns}, ast) do
-    matches? = patterns |> AST.find_single_matches(ast) |> Enum.all?(&(&1 == :match))
-
-    if matches? do
+    if AST.match_all(patterns, ast) do
       [emit_issue!(check)]
     else
       []

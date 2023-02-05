@@ -3,40 +3,31 @@ defmodule Prettiex.AST do
 
   @typep expr :: {atom, any(), atom | [expr()]}
 
-  @spec get(expr(), atom()) :: expr() | nil
-  def get(expr, target) do
-    expr
-    |> Z.zip()
-    |> Z.find(fn
-      {term, _, _} -> term == target
-      term -> term == target
-    end)
-    |> maybe_node()
-  end
-
-  @spec exists?(expr(), atom()) :: boolean()
-  def exists?(expr, target) do
-    not is_nil(get(expr, target))
-  end
-
-  def find_single_matches(
-        [pattern | patterns],
-        ast,
-        initial_matches \\ []
+  def find_matches(
+        patterns,
+        ast
       ) do
-    {_new_ast, matches} =
-      Macro.prewalk(ast, initial_matches, fn node, matches ->
-        if matches?(pattern.form, node) do
-          {node, [if(pattern.skip?, do: :skip_match, else: :match) | matches]}
-        else
-          {node, matches}
-        end
-      end)
-
-    case patterns do
-      [] -> matches
-      remaining -> find_single_matches(remaining, ast, matches)
+    on_match = fn match, pattern ->
+      cond do
+        is_nil(match) -> :skip
+        pattern.skip? -> :skip_match
+        true -> :match
+      end
     end
+
+    Enum.map(patterns, fn pattern ->
+      ast
+      |> Z.zip()
+      |> Z.find(&matches_form?(pattern.form, &1))
+      |> on_match.(pattern)
+    end)
+    |> Enum.filter(&(&1 != :skip))
+  end
+
+  def match_all(patterns, ast) do
+    patterns
+    |> find_matches(ast)
+    |> Enum.all?(&(&1 == :match))
   end
 
   def find_sibling_matches(patterns, ast, initial_matches \\ [])
@@ -67,10 +58,10 @@ defmodule Prettiex.AST do
     initial_matches
   end
 
-  def matches?({a, _, a_children}, {b, _, b_children}) do
+  def matches?(a, b) do
     cond do
-      a == b and is_nil(a_children) -> true
-      a == b and children_matches?(a_children, b_children) -> true
+      node_atom(a) == node_atom(b) and is_nil(node_args(a)) -> true
+      node_atom(a) == node_atom(b) and args_match?(node_args(a), node_args(b)) -> true
       true -> false
     end
   end
@@ -79,12 +70,25 @@ defmodule Prettiex.AST do
     false
   end
 
-  defp children_matches?(a, b) do
+  defp args_match?(a, b) when is_list(a) and is_list(b) do
     Enum.zip(a, b)
     |> Enum.all?(fn {aa, bb} -> matches?(aa, bb) end)
   end
 
+  defp args_match?(a, b), do: a == b
+
+  defp node_atom({atom, _, _}), do: atom
+  defp node_args({_, _, args}), do: args
+
   defp maybe_node(input) do
     if is_nil(input), do: nil, else: Z.node(input)
+  end
+
+  def matches_form?({form_atom, _, form_args}, {node_atom, _meta, node_args}) do
+    form_atom == node_atom and (is_nil(form_args) or form_args == node_args)
+  end
+
+  def matches_form?(a, b) do
+    a == b
   end
 end
