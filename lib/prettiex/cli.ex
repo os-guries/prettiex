@@ -22,13 +22,17 @@ defmodule Prettiex.CLI do
     Enum.each(checks, fn check ->
       [{module, _}] = Code.require_file(check)
 
-      Enum.each(paths, fn path ->
-        ast = path |> File.read!() |> Code.string_to_quoted!()
+      issues =
+        Enum.map(paths, fn path ->
+          ast = path |> File.read!() |> Code.string_to_quoted!()
+          {path, Runner.run(module, ast)}
+        end)
 
-        module
-        |> Runner.run(ast)
-        |> Enum.each(fn issue -> report_issue(issue, path) end)
+      Enum.each(issues, fn {path, issues} ->
+        Enum.each(issues, &report_issue(&1, path))
       end)
+
+      report_totals(issues)
     end)
   end
 
@@ -58,6 +62,13 @@ defmodule Prettiex.CLI do
     IO.puts(IO.ANSI.red() <> issue.name <> IO.ANSI.reset())
     IO.puts(issue.message)
     IO.puts(src <> ":" <> to_string(line))
+    IO.puts("\n")
+  end
+
+  def report_totals(issues) do
+    errors = to_string(length(issues))
+
+    IO.puts("Prettiex ran and found " <> IO.ANSI.red() <> errors <> " errors" <> IO.ANSI.reset())
     IO.puts("\n")
   end
 end
