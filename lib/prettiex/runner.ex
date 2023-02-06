@@ -34,7 +34,7 @@ defmodule Prettiex.Runner do
     []
   end
 
-  defp emit_issue!(%{entities: [%Meta{} = meta | _]}, {_, node_meta, _} \\ nil) do
+  defp emit_issue!(%{entities: [%Meta{} = meta | _]}, {_, node_meta, _}) do
     %Issue{name: meta.name, message: meta.message, info: node_meta}
   end
 end
