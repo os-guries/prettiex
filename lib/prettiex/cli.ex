@@ -19,10 +19,10 @@ defmodule Prettiex.CLI do
   end
 
   defp run_checks(checks, paths) do
-    Enum.each(checks, fn check ->
-      [{module, _}] = Code.require_file(check)
+    reports =
+      Enum.flat_map(checks, fn check ->
+        [{module, _}] = Code.require_file(check)
 
-      reports =
         Enum.flat_map(paths, fn path ->
           ast = path |> File.read!() |> Code.string_to_quoted!()
 
@@ -30,10 +30,11 @@ defmodule Prettiex.CLI do
           |> Runner.run(ast)
           |> Enum.map(fn issue -> {issue, path} end)
         end)
+      end)
 
-      Enum.each(reports, fn {issue, path} -> report_issue(issue, path) end)
-      report_totals(reports)
-    end)
+    Enum.each(reports, fn {issue, path} -> report_issue(issue, path) end)
+
+    report_totals(reports)
   end
 
   defp get_config_path(options) do
