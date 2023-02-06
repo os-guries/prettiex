@@ -22,6 +22,7 @@ defmodule Prettiex.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:owl, "~> 0.6"},
       {:spark, "~> 0.3.9"},
       {:sourceror, "~> 0.11"},
       {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test]}

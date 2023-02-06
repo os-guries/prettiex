@@ -22,17 +22,17 @@ defmodule Prettiex.CLI do
     Enum.each(checks, fn check ->
       [{module, _}] = Code.require_file(check)
 
-      issues =
-        Enum.map(paths, fn path ->
+      reports =
+        Enum.flat_map(paths, fn path ->
           ast = path |> File.read!() |> Code.string_to_quoted!()
-          {path, Runner.run(module, ast)}
+
+          module
+          |> Runner.run(ast)
+          |> Enum.map(fn issue -> {issue, path} end)
         end)
 
-      Enum.each(issues, fn {path, issues} ->
-        Enum.each(issues, &report_issue(&1, path))
-      end)
-
-      report_totals(issues)
+      Enum.each(reports, fn {issue, path} -> report_issue(issue, path) end)
+      report_totals(reports)
     end)
   end
 
@@ -56,19 +56,28 @@ defmodule Prettiex.CLI do
     end
   end
 
-  defp report_issue(%Issue{} = issue, src) do
+  defp report_issue(%Issue{} = issue, path) do
     [line: line] = issue.info
 
-    IO.puts(IO.ANSI.red() <> issue.name <> IO.ANSI.reset())
-    IO.puts(issue.message)
-    IO.puts(src <> ":" <> to_string(line))
-    IO.puts("\n")
+    title = " " <> issue.name <> " "
+    line = String.replace(path <> ":" <> to_string(line), File.cwd!(), "")
+
+    [
+      issue.message,
+      Owl.Data.tag(line, :light_black),
+      "\n"
+    ]
+    |> Owl.Data.unlines()
+    |> Owl.Box.new(padding_x: 2, padding_y: 1, title: Owl.Data.tag(title, :red_background))
+    |> Owl.IO.puts()
   end
 
   def report_totals(issues) do
     errors = to_string(length(issues))
+    error_total = IO.ANSI.red() <> errors <> " errors" <> IO.ANSI.reset()
+    warning_total = IO.ANSI.yellow() <> "0 warnings" <> IO.ANSI.reset()
 
-    IO.puts("Prettiex ran and found " <> IO.ANSI.red() <> errors <> " errors" <> IO.ANSI.reset())
+    IO.puts("Prettiex ran and found " <> error_total <> " and " <> warning_total)
     IO.puts("\n")
   end
 end
