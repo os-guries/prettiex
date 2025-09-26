@@ -1,6 +1,6 @@
 # Prettiex
 
-**TODO: Add description**
+Hackathon project creating a DSL for Elixir linting checks, see [examples](https://github.com/os-guries/prettiex/tree/main/examples/checks).
 
 ## Installation
 
